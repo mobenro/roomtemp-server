@@ -29,6 +29,57 @@
 #define handle_error(msg) \
     do { perror(msg); exit(-1); } while (0)
 
+char *http_header = "HTTP/1.0 200 OK\r\n\r\n";
+
+char *html_first = " \
+<!DOCTYPE html> \
+<html lang=\"en\">  \
+<head>  \
+    <meta charset=\"UTF-8\">  \
+    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"> \
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> \
+    <title>Temperature reader</title> \
+    <style> \
+        body {  \
+            height: 100vh;  \
+            margin: 0;  \
+            display: flex;  \
+            align-items: center;  \
+            justify-content: center;  \
+            background: linear-gradient(-45deg, #96c93d, #00b09b, #96c93d, #00b09b);  \
+	        background-size: 400% 400%; \
+            animation: gradient 5s ease infinite; \
+        } \
+        div { \
+           font-family: 'Courier New', Courier, monospace;  \
+           background-color: white; \
+           text-align: center;  \
+           padding: 1rem; \
+           border-radius: 15px; \
+           line-height: 2.5rem; \
+           box-shadow: rgba(17, 17, 26, 0.1) 0px 8px 24px, rgba(17, 17, 26, 0.1) 0px 16px 56px, rgba(17, 17, 26, 0.1) 0px 24px 80px;  \
+        } \
+        @keyframes gradient { \
+        0% {  \
+            background-position: 0% 50%;  \
+        } \
+        50% { \
+            background-position: 100% 50%;  \
+        } \
+        100% {  \
+            background-position: 0% 50%;  \
+        } \
+    } \
+    </style>  \
+</head> \
+<body>  \
+";
+
+char *html_last = " \
+</body>             \
+</html>             \
+";
+
 int rts_init_gpio();
 float rts_read_1w_temp();
 
@@ -38,7 +89,8 @@ int main() {
   struct sockaddr_in server_addr;
   int read_bytes;
   
-  char buff[MAX_LINES];
+  // char buff[MAX_LINES];
+  char buff[2048];
   char recvbuff[MAX_LINES +1];
   
   int epollfd, nfds;
@@ -121,10 +173,20 @@ int main() {
         }
         float temp = rts_read_1w_temp();
         if(temp == -100.) {
-          snprintf(buff, sizeof buff, "HTTP/1.0 200 OK\r\n\r\ncouldn't get the sensor data.. sorry ..");
+          snprintf(buff, sizeof buff, "%s%s%s%s" ,
+                                      http_header ,
+                                      html_first ,
+                                      "<div><h1>couldn't get<br>the sensor data..<br>sorry</h1></div>",
+                                      html_last);
         } else {
           printf("[info] room temp is %.3f\n", temp);
-          snprintf(buff, sizeof buff, "HTTP/1.0 200 OK\r\n\r\nRoom Temp = %.3f grad Celcius", temp);
+          snprintf(buff, sizeof buff, "%s%s%s%.3f%s%s" ,
+                                      http_header ,
+                                      html_first ,
+                                      "<div><h1>Room temperature:<br>",
+                                      temp,
+                                      "°<br>Celsius</h1></div>",
+                                      html_last);
         }
 
         if( (send(connfd, buff, strlen(buff), 0)) < 0) {
@@ -144,7 +206,7 @@ int main() {
   }
   printf("[info] cleaning up..\n");
   close(listenfd);
-  printf("[info] clean up done, have a great day.\n");
+  printf("[info] clean up done, have a nice day.\n");
 }
 
 int rts_init_gpio() {
@@ -155,7 +217,7 @@ int rts_init_gpio() {
 }
 
 float rts_read_1w_temp() {
-    DIR *dir;
+  DIR *dir;
   struct dirent *dirent;
   char device_path[128];
   char path[] = "/sys/bus/w1/devices";
