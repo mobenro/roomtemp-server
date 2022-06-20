@@ -1,3 +1,22 @@
 #+title: rommtemp-server
 
-*** roomtemp-server
+* DISCLAIMER:
+!!! THIS SOFTWARE WAS WRITTEN ONLY FOR EDUCATION PURPOSES AND SHOULD NEVER BE USED PROFESSIONALLY. !!!
+!!! THIS SOFTWARE WAS ONLY TESTED WITH A RASPBERRY PI 3 MODEL B+ AND DS18B20 THERMAL SENSOR !!!
+
+* PI setup:
+- Before being able to use the one wire protocol, it should be enabled in the raspberry pi configuration. there are multiple ways on how to do it which are explained in this web page [[https://www.raspberrypi-spy.co.uk/2018/02/enable-1-wire-interface-raspberry-pi/][Enable 1-Wire Interface on the Raspberry Pi]]. I recommend the raspi-config method. a reboot is necessary for the configuration to take effect.
+- It's also worth noting that the code uses the [[https://abyz.me.uk/rpi/pigpio/][pigpio library]] to interact with the GPIO pins of the raspberry pi (for declaring pin as input and pulling down the pull-down resistor), so make sure you have it on your system before compiling the project.
+
+* connecting the sensor:
+The one wire protocol uses GPIO-4 by default so if you didn't change any default configuration you should connect the data wire to the gpio-4 pin of your raspberry pi. the ground wire should be connected -well- to the ground pin. and the power wire of the sensor to the 3.3V power pin on the pi. be careful NOT to connect the sensor to the 5V pin or you could potentially burn the GPIO pin as GPIO pins on the pi only support 3.3V.
+
+* how to use:
+** compile with:
+#+begin_src bash
+  gcc rtserver.c -lpigpio -o rtserver.o
+#+end_src
+** running
+- run "rtserver.o" with root privileges.
+- wait until the server starts.
+- you should now be able to use any browser and type the ip address of your pi (or just "localhost" if your browser is running the same machine as the server) and you should be able to see the web page with the sensor data.
